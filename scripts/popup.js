@@ -1,9 +1,7 @@
 // @ts-check
 const browser = chrome
 
-// ///////////////////////////////////////////////////////////////////
 // DOM Elements
-// ///////////////////////////////////////////////////////////////////
 const tabs = document.querySelectorAll('.tab')
 const tasksPanel = document.getElementById('tasks-panel')
 const wallpaperPanel = document.getElementById('wallpaper-panel')
@@ -24,17 +22,13 @@ let bgContent = []
 let currentBgIndex = 0
 let currentPreference = 'bing-wallpaper'
 
-// ///////////////////////////////////////////////////////////////////
 // Initialization
-// ///////////////////////////////////////////////////////////////////
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTasks()
     await loadWallpaperState()
 })
 
-// ///////////////////////////////////////////////////////////////////
 // Tab Switching
-// ///////////////////////////////////////////////////////////////////
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         const targetTab = tab.getAttribute('data-tab')
@@ -54,9 +48,7 @@ tabs.forEach(tab => {
     })
 })
 
-// ///////////////////////////////////////////////////////////////////
 // Tasks
-// ///////////////////////////////////////////////////////////////////
 async function loadTasks() {
     const tasks = await getTasks()
     renderTasks(tasks)
@@ -71,35 +63,55 @@ function renderTasks(tasks) {
         emptyTasks.classList.remove('show')
         tasks.forEach(task => {
             if (task.id !== null && task.id !== undefined) {
-                const taskEl = document.createElement('span')
-                taskEl.className = 'task-item'
+                // Same behavior as the new tab: click to check off, × to delete
+                const taskEl = document.createElement('div')
+                taskEl.className = task.done ? 'task-item done' : 'task-item'
                 taskEl.setAttribute('data-id', task.id)
-                taskEl.textContent = task.task
+
+                const text = document.createElement('button')
+                text.type = 'button'
+                text.className = 'task-text'
+                text.setAttribute('aria-pressed', String(!!task.done))
+                text.textContent = task.task
+
+                const remove = document.createElement('button')
+                remove.type = 'button'
+                remove.className = 'task-delete'
+                remove.setAttribute('aria-label', 'Delete task')
+                remove.textContent = '×'
+
+                taskEl.append(text, remove)
                 taskList.appendChild(taskEl)
             }
         })
     }
 }
 
+// Returns true when the task was added, so the input is only cleared on success
 async function addTask(text) {
-    if (!text || text.trim().length === 0) return
-
-    let taskText = text.trim()
-    if (taskText.length > 45) taskText = taskText.slice(0, 45) + '...'
+    const taskText = text?.trim()
+    if (!taskText) return false
 
     const currentTasks = await getTasks()
 
-    if (currentTasks.length > 20) {
+    if (currentTasks.length >= 20) {
         alert('Too many tasks! Delete some first.')
-        return
+        return false
     }
 
     const newTask = {
-        id: currentTasks.length > 0 ? currentTasks.length + 1 : 0,
+        id: Date.now(),
         task: taskText
     }
 
     await setStorage('task-list', [newTask, ...currentTasks])
+    await loadTasks()
+    return true
+}
+
+async function toggleTask(id) {
+    const currentTasks = await getTasks()
+    await setStorage('task-list', currentTasks.map(task => task.id === id ? { ...task, done: !task.done } : task))
     await loadTasks()
 }
 
@@ -112,29 +124,23 @@ async function deleteTask(id) {
 
 // Task event handlers
 addTaskBtn.addEventListener('click', async () => {
-    await addTask(taskInput.value)
-    taskInput.value = ''
+    if (await addTask(taskInput.value)) taskInput.value = ''
     taskInput.focus()
 })
 
 taskInput.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') {
-        await addTask(taskInput.value)
-        taskInput.value = ''
-    }
+    if (e.key === 'Enter' && !e.isComposing && await addTask(taskInput.value)) taskInput.value = ''
 })
 
 taskList.addEventListener('click', async (e) => {
-    const target = e.target
-    if (target.hasAttribute('data-id')) {
-        const id = parseInt(target.getAttribute('data-id'))
-        await deleteTask(id)
-    }
+    const item = e.target.closest('.task-item')
+    if (!item) return
+    const id = Number(item.getAttribute('data-id'))
+    if (e.target.closest('.task-delete')) await deleteTask(id)
+    else if (e.target.closest('.task-text')) await toggleTask(id)
 })
 
-// ///////////////////////////////////////////////////////////////////
 // Wallpaper
-// ///////////////////////////////////////////////////////////////////
 async function loadWallpaperState() {
     // Get current preference
     currentPreference = await getStorage('wallpaper-src') || 'bing-wallpaper'
@@ -164,12 +170,21 @@ function updateWallpaperControls() {
 }
 
 async function loadBingData() {
-    try {
-        const res = await fetch('https://peapix.com/bing/feed?country=us', { cache: 'force-cache' })
-        bgContent = await res.json()
-    } catch (error) {
-        console.error('Failed to load Bing data:', error)
-        bgContent = []
+    if (currentPreference !== 'bing-wallpaper') return
+    // The new tab page keeps a recent copy of the feed; only fetch when it's missing
+    const region = await getStorage('bing-region') || 'us'
+    const cached = await getStorage('bing-feed')
+    if (cached?.region === region && Array.isArray(cached.data)) {
+        bgContent = cached.data
+    } else {
+        try {
+            const res = await fetch(`https://peapix.com/bing/feed?country=${region}`)
+            const data = await res.json()
+            bgContent = Array.isArray(data) ? data : []
+        } catch (error) {
+            console.error('Failed to load Bing data:', error)
+            bgContent = []
+        }
     }
 
     updateBingTitle()
@@ -198,6 +213,7 @@ modeButtons.forEach(btn => {
         currentPreference = mode
         await setStorage('wallpaper-src', mode)
         updateWallpaperControls()
+        if (mode === 'bing-wallpaper' && !bgContent.length) await loadBingData()
     })
 })
 
@@ -230,26 +246,20 @@ nextWallpaperBtn.addEventListener('click', async () => {
 
 // Open new tab button
 openNewtabBtn.addEventListener('click', () => {
-    browser.tabs.create({ url: 'pages/new-tab.html' })
+    browser.tabs.create({ url: browser.runtime.getURL('pages/new-tab.html') })
     window.close()
 })
 
-// ///////////////////////////////////////////////////////////////////
 // Storage Utilities
-// ///////////////////////////////////////////////////////////////////
 async function getTasks() {
-    if (await checkStorage('task-list')) {
-        return await getStorage('task-list')
+    const tasks = (await getStorage('task-list') || []).filter(task => task?.id !== null && task?.id !== undefined)
+    // Older versions could create duplicate ids, which made one delete remove several tasks
+    if (new Set(tasks.map(task => task.id)).size !== tasks.length) {
+        const base = Date.now()
+        tasks.forEach((task, i) => { task.id = base + i })
+        await setStorage('task-list', tasks)
     }
-    return []
-}
-
-async function checkStorage(key) {
-    if (typeof key !== 'string' || key.length < 1) {
-        throw "Storage key is empty or invalid"
-    }
-    const result = await browser.storage.local.get(key)
-    return result[key] !== undefined && result[key] !== null
+    return tasks
 }
 
 async function getStorage(key) {
