@@ -51,7 +51,8 @@
                         type="text"
                         id="task-input"
                         placeholder="Add a quick task..."
-                        maxlength="50" />
+                        aria-label="New task"
+                        maxlength="100" />
                     <button id="add-task-btn" title="Add Task">
                         <svg
                             width="18"
@@ -126,6 +127,18 @@
                             </svg>
                             Custom
                         </button>
+                        <button class="mode-btn" data-mode="color-wallpaper">
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                            </svg>
+                            Color
+                        </button>
                     </div>
                 </div>
 
@@ -167,7 +180,7 @@
                 <div id="custom-controls" class="wallpaper-section hidden">
                     <label class="section-label">Custom Wallpaper</label>
                     <p class="wallpaper-info muted">
-                        Manage custom wallpapers in the New Tab settings.
+                        Manage your wallpaper in the New Tab settings.
                     </p>
                     <button id="open-newtab" class="secondary-btn">
                         <svg

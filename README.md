@@ -6,7 +6,7 @@
 [![Made with Love](https://img.shields.io/badge/Made%20with-💙-blue?style=for-the-badge)](https://nalinda.dev)
 
 <p align="center">
-  <img src="images/nalinda-new-tab-3d-stack.jpg" alt="New Tab Extension Preview" width="100%">
+  <img src="images/nalinda-new-tab-3d-stack.jpg" alt="New Tab 2.0 on three wallpapers" width="100%">
 </p>
 
 A Firefox browser extension that transforms your new tab experience into something truly personal. Built with simplicity and privacy in mind, this extension replaces the default blank tab with a beautiful, customizable homepage while dynamically adapting your browser theme to match what you're viewing.
@@ -22,8 +22,8 @@ The standout feature is dynamic theme adaptation. The extension analyzes the ave
 ## Features
 
 <p align="center">
-  <img src="images/nalinda-new-tab-dark.png" alt="Dark Mode" width="48%">
-  <img src="images/nalinda-new-tab-light.png" alt="Light Mode" width="48%">
+  <img src="images/nalinda-new-tab-dynamic-theme.png" alt="Browser theme matching the wallpaper" width="48%">
+  <img src="images/nalinda-new-tab-home.png" alt="New Tab at night with the browser theme to match" width="48%">
 </p>
 
 ### Dynamic Browser Theming
@@ -36,23 +36,41 @@ Your new tab page includes:
 
 -   **Live Clock**: Displays current time and date in a clean, readable format
 -   **Contextual Greetings**: Time-based messages that change throughout the day, from early morning motivation to late night acknowledgment
--   **Quick Search**: A search bar that integrates directly with your browser's search engine
--   **Top Sites**: Visual shortcuts to your most frequently visited websites with favicon previews
+-   **Quick Search**: A search bar that integrates directly with your browser's search engine. Press `/` to focus it, `Esc` closes any open sidebar
+-   **Top Sites**: Visual shortcuts to your most visited websites or your own list of favorites
+-   **Widgets**: Optional weather, tasks, focus timer and year-progress cards
 
 ### Wallpaper System
 
-Choose your backdrop from two sources:
+Choose your backdrop from three sources:
 
--   **Bing Daily Images**: Access the archive of Bing's featured photography, with previous/next navigation to browse through recent selections. Each image includes attribution, and you can download the original in standard or 4K resolution.
--   **Personal Images**: Upload your own wallpaper for a completely custom look. The image is stored locally.
+-   **Bing Daily Images**: Browse recent Bing photography in a gallery and click one to use it, with a choice of region. Each image includes attribution, and you can download the original in standard or 4K resolution.
+-   **Personal Images**: Keep a gallery of up to 12 of your own wallpapers, stored locally.
+
+-   **Color**: A solid color or gradient, from presets or your own picks.
+
+Photos can shuffle to a random image on every new tab, and blur and darkness sliders help keep text readable.
 
 ### Task Manager
 
-A simple sidebar-based task list to keep track of what you need to do. Add tasks, view your list, and remove completed items. All tasks persist across browser sessions using local storage.
+A simple sidebar-based task list to keep track of what you need to do. Add tasks, check them off, and clear completed items. Deleting shows an undo option. All tasks persist across browser sessions using local storage.
 
 ### Top Sites Grid
 
-Quick access tiles for your most frequently visited websites, displaying up to seven sites with their favicons and simplified titles. Local development URLs are automatically filtered out for a cleaner presentation.
+Quick access tiles shown below the search bar. Choose **Most Visited** (up to seven of your most frequently visited sites, with local development URLs filtered out; hover a tile and click × to hide it) or **My Sites** (your own list of favorite websites). The grid can also be turned off entirely.
+
+### Widgets
+
+A row of small cards above or below the top sites. The row and each widget can be shown or hidden in settings, or hover a widget and click × to close it:
+
+-   **Weather**: Current temperature and conditions for a city you choose, in °C or °F. It can also be shown below the clock, even with the widget off
+-   **Tasks**: Your open tasks at a glance; click to open the task list
+-   **Focus Timer**: 25-minute focus and 5-minute break sessions, kept in sync across open tabs, with a notification when a session ends
+-   **Year Progress**: Day of the year, a progress bar and a daily quote
+
+### Appearance
+
+Show or hide the clock, greeting and photo info, switch to a 24-hour clock, or turn off dynamic browser theming to keep your own Firefox theme.
 
 ## Privacy
 
@@ -60,13 +78,16 @@ This extension does not collect any personal data. All permissions requested are
 
 -   **storage**: Save your preferences, wallpaper choice, and tasks locally
 -   **search**: Enable the integrated search functionality
--   **bookmarks**: Access bookmark data for potential future features
 -   **theme**: Apply dynamic theme changes to browser chrome
 -   **topSites**: Display your frequently visited sites
 -   **tabs/activeTab**: Capture tab screenshots for color analysis
--   **scripting**: Inject content scripts for theme detection
+-   **alarms/notifications**: End a focus timer session on time and let you know, even when no new tab is open
 
-Everything stays on your machine. Your browsing habits, tasks, and preferences never leave your browser.
+Your tasks, wallpapers and preferences stay in your browser. A few features reach outside services:
+
+-   **Site icons** for the top sites are loaded from Favicone, which sees the site addresses shown in the grid.
+-   **Bing photos** are loaded from Peapix.
+-   **Weather** (optional, off by default): the city you set is sent to Open-Meteo to look up coordinates, and those coordinates are sent to fetch the forecast.
 
 **[Install from Firefox Add-ons →](https://addons.mozilla.org/en-US/firefox/addon/nalinda-new-tab/)**
 
@@ -90,11 +111,16 @@ New-Tab-Fire-Fox/
 │   ├── icon-128.png
 │   ├── icon-256.png
 │   └── icon.png
-├── images/                # Screenshots and promotional images
+├── build.sh               # Packages the extension into dist/new-tab-<version>.xpi
+├── images/                # Screenshots
 │   ├── nalinda-new-tab-3d-stack.jpg
-│   ├── nalinda-new-tab-dark.png
-│   ├── nalinda-new-tab-light.png
-│   └── nalinda-new-tab-synthwave.png
+│   ├── nalinda-new-tab-layers.jpg
+│   ├── nalinda-new-tab-home.png
+│   ├── nalinda-new-tab-dynamic-theme.png
+│   ├── nalinda-new-tab-your-images.png
+│   ├── nalinda-new-tab-bing-gallery.png
+│   ├── nalinda-new-tab-widgets-settings.png
+│   └── nalinda-new-tab-tasks.png
 ├── pages/                 # HTML pages
 │   ├── new-tab.html       # New tab page structure
 │   └── popup.html         # Browser action popup
@@ -151,6 +177,10 @@ I want to be clear about my intentions regarding this integration:
 -   **No Commercial Intent**: This extension is a personal project with no commercial motivation. The integration exists purely to enhance the browsing experience for users who appreciate beautiful photography.
 
 Thank you to everyone at Peapix for maintaining this service and making it available.
+
+### Open-Meteo
+
+The optional weather widget uses the free [Open-Meteo](https://open-meteo.com) forecast and geocoding APIs. Only the city you type and its coordinates are sent, and results are cached for 30 minutes.
 
 ### Favicone
 
